@@ -314,14 +314,14 @@ int main()
 						double right_lane_speed = 0;
 						if (left_lane >= 0 && left_lane < 2)
 						{
-							if (!CheckIfCarIsTooClose(left_lane, sensor_fusion, previos_size, car_s, true, ceil(60 - ref_vel)))
+							if (!CheckIfCarIsTooClose(left_lane, sensor_fusion, previos_size, car_s, true, ceil((60 - ref_vel)/2)))
 							{
 								left_lane_speed = ComputeSpeedOfLen(left_lane, sensor_fusion, previos_size, car_s);
 							}
 						}
 						if (right_lane <= 2 && right_lane > 0)
 						{
-							if (!CheckIfCarIsTooClose(right_lane, sensor_fusion, previos_size, car_s, true, ceil(60 - ref_vel)))
+							if (!CheckIfCarIsTooClose(right_lane, sensor_fusion, previos_size, car_s, true, ceil((60 - ref_vel)/2)))
 							{
 								right_lane_speed = ComputeSpeedOfLen(right_lane, sensor_fusion, previos_size, car_s);
 							}
@@ -352,14 +352,14 @@ int main()
 							double right_lane_speed = 0;
 							if (left_lane >= 0 && left_lane < 2)
 							{
-								if (!CheckIfCarIsTooClose(left_lane, sensor_fusion, previos_size, car_s, true, ceil(60 - ref_vel)))
+								if (!CheckIfCarIsTooClose(left_lane, sensor_fusion, previos_size, car_s, true, ceil((60 - ref_vel)/2)))
 								{
 									left_lane_speed = ComputeSpeedOfLen(left_lane, sensor_fusion, previos_size, car_s);
 								}
 							}
 							if (right_lane <= 2 && right_lane > 0)
 							{
-								if (!CheckIfCarIsTooClose(right_lane, sensor_fusion, previos_size, car_s, true, ceil(60 - ref_vel)))
+								if (!CheckIfCarIsTooClose(right_lane, sensor_fusion, previos_size, car_s, true, ceil((60 - ref_vel)/2)))
 								{
 									right_lane_speed = ComputeSpeedOfLen(right_lane, sensor_fusion, previos_size, car_s);
 								}
