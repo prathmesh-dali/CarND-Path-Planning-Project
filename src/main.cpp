@@ -211,7 +211,7 @@ double ComputeTimeToReachNextVehicleInLen(int lane, json sensor_fusion, int prev
 			}
 		}
 	}
-	return modified ? nearest_s / abs(speed - car_speed) : speed;
+	return modified ? abs(nearest_s-car_s) / abs(speed - car_speed) : speed;
 }
 
 double ComputeSpeedOfLen(int lane, json sensor_fusion, int previos_size, double car_s)
@@ -341,23 +341,18 @@ int main()
 						double right_lane_time = 0;
 						if (left_lane >= 0 && left_lane < 2)
 						{
-							if (!CheckIfCarIsTooClose(left_lane, sensor_fusion, previos_size, car_s, true, ceil(60 - ref_vel)))
+							if (!CheckIfCarIsTooClose(left_lane, sensor_fusion, previos_size, car_s, true, ceil((60 - ref_vel)/2)))
 							{
 								left_lane_time = ComputeTimeToReachNextVehicleInLen(left_lane, sensor_fusion, previos_size, car_s, ref_vel / 2.24);
 							}
 						}
 						if (right_lane <= 2 && right_lane > 0)
 						{
-							if (!CheckIfCarIsTooClose(right_lane, sensor_fusion, previos_size, car_s, true, ceil(60 - ref_vel)))
+							if (!CheckIfCarIsTooClose(right_lane, sensor_fusion, previos_size, car_s, true, ceil((60 - ref_vel)/2)))
 							{
 								right_lane_time = ComputeTimeToReachNextVehicleInLen(right_lane, sensor_fusion, previos_size, car_s, ref_vel / 2.24);
 							}
 						}
-						cout << "-----------------------------------" << endl;
-						cout << "left_lane_time"
-							 << " : "
-							 << "right_lane_time" << endl;
-						cout << left_lane_time << " : " << right_lane_time << endl;
 						if (left_lane_time != right_lane_time)
 						{
 							lane = right_lane_time > left_lane_time ? right_lane : left_lane;
@@ -384,35 +379,28 @@ int main()
 							double right_lane_time = 0;
 							if (left_lane >= 0 && left_lane < 2)
 							{
-								if (!CheckIfCarIsTooClose(left_lane, sensor_fusion, previos_size, car_s, true, ceil(60 - ref_vel)))
+								if (!CheckIfCarIsTooClose(left_lane, sensor_fusion, previos_size, car_s, true, ceil((60 - ref_vel)/2)))
 								{
 									left_lane_time = ComputeTimeToReachNextVehicleInLen(left_lane, sensor_fusion, previos_size, car_s, ref_vel / 2.24);
 								}
 							}
 							if (right_lane <= 2 && right_lane > 0)
 							{
-								if (!CheckIfCarIsTooClose(right_lane, sensor_fusion, previos_size, car_s, true, ceil(60 - ref_vel)))
+								if (!CheckIfCarIsTooClose(right_lane, sensor_fusion, previos_size, car_s, true, ceil((60 - ref_vel)/2)))
 								{
 									right_lane_time = ComputeTimeToReachNextVehicleInLen(right_lane, sensor_fusion, previos_size, car_s, ref_vel / 2.24);
 								}
 							}
-							cout << "-----------------------------------" << endl;
-							cout << "current_lane_time"
-								 << " : "
-								 << "left_lane_time"
-								 << " : "
-								 << "right_lane_time" << endl;
-							cout << current_lane_time << " : " << left_lane_time << " : " << right_lane_time << endl;
-							if (current_lane_time < left_lane_time && left_lane_time > right_lane_time)
-							{
-								lane = left_lane;
-								delay_consecutive_lane_change = 30;
-							}
-							else if (current_lane_time < right_lane_time && right_lane_time > left_lane_time)
+							if (current_lane_time < right_lane_time && right_lane_time > left_lane_time)
 							{
 								lane = right_lane;
 								delay_consecutive_lane_change = 30;
 							}
+							else if (current_lane_time < left_lane_time)
+							{
+								lane = left_lane;
+								delay_consecutive_lane_change = 30;
+							} 
 						}
 						else
 						{
