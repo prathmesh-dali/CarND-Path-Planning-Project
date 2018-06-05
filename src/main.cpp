@@ -164,7 +164,7 @@ vector<double> getXY(double s, double d, const vector<double> &maps_s, const vec
 	return {x, y};
 }
 
-bool CheckIfCarIsTooClose(int lane, json sensor_fusion, int previos_size, double car_s, bool check_behind)
+bool CheckIfCarIsTooClose(int lane, json sensor_fusion, int previos_size, double car_s, bool check_behind, int behind_distance)
 {
 	bool car_in_range = false;
 	for (int i = 0; i < sensor_fusion.size(); i++)
@@ -178,7 +178,7 @@ bool CheckIfCarIsTooClose(int lane, json sensor_fusion, int previos_size, double
 			double check_car_s = sensor_fusion[i][5];
 
 			check_car_s += ((double)previos_size * 0.02 * check_speed);
-			if ((check_car_s > car_s && (check_car_s - car_s) < 30) || (check_car_s < car_s && (car_s - check_car_s) < 10 && check_behind))
+			if ((check_car_s > car_s && (check_car_s - car_s) < 30) || (check_car_s < car_s && (car_s - check_car_s) < behind_distance && check_behind))
 			{
 				car_in_range = true;
 			}
@@ -300,7 +300,7 @@ int main()
 						car_s = end_path_s;
 					}
 
-					too_close = CheckIfCarIsTooClose(lane, sensor_fusion, previos_size, car_s, false);
+					too_close = CheckIfCarIsTooClose(lane, sensor_fusion, previos_size, car_s, false, 0);
 					if (too_close)
 					{
 						if (ref_vel / 2.24 > ComputeSpeedOfLen(lane, sensor_fusion, previos_size, car_s))
@@ -313,14 +313,14 @@ int main()
 						double right_lane_speed = 0;
 						if (left_lane >= 0 && left_lane < 2)
 						{
-							if (!CheckIfCarIsTooClose(left_lane, sensor_fusion, previos_size, car_s, true))
+							if (!CheckIfCarIsTooClose(left_lane, sensor_fusion, previos_size, car_s, true, ceil(60-ref_vel)))
 							{
 								left_lane_speed = ComputeSpeedOfLen(left_lane, sensor_fusion, previos_size, car_s);
 							}
 						}
 						if (right_lane <= 2 && right_lane > 0)
 						{
-							if (!CheckIfCarIsTooClose(right_lane, sensor_fusion, previos_size, car_s, true))
+							if (!CheckIfCarIsTooClose(right_lane, sensor_fusion, previos_size, car_s, true, ceil(60-ref_vel)))
 							{
 								right_lane_speed = ComputeSpeedOfLen(right_lane, sensor_fusion, previos_size, car_s);
 							}
