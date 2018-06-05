@@ -289,7 +289,9 @@ int main() {
 
 						too_close = CheckIfCarIsTooClose(lane, sensor_fusion, previos_size, car_s, false);
 						if(too_close){
-							ref_vel-=0.224;
+							if(ref_vel/2.24>ComputeSpeedOfLen(lane, sensor_fusion, previos_size, car_s)){
+								ref_vel-=0.224;
+							}
 							int right_lane = lane+1;
 							int left_lane = lane-1;
 							double left_lane_speed = 0;
