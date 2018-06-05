@@ -183,6 +183,29 @@ bool CheckIfCarIsTooClose(int lane, json sensor_fusion, int previos_size, double
 	return car_in_range;
 }
 
+double ComputeTimeToReachNextVehicleInLen(int lane, json sensor_fusion, int previos_size, double car_s, double car_speed){
+	double speed = 100000;
+	double nearest_s = 100000; 
+	bool modified = false;
+	for(int i = 0; i< sensor_fusion.size(); i++){
+		float d = sensor_fusion[i][6];
+		if(d<(2+4*lane+2) && d> (2+4*lane-2)){
+			double vx = sensor_fusion[i][3];
+			double vy = sensor_fusion[i][4];
+			double check_speed = sqrt(vx*vx+vy*vy);
+			double check_car_s = sensor_fusion[i][5];
+
+			check_car_s+= ((double)previos_size*0.02*check_speed);
+			if(check_car_s>car_s && check_car_s<nearest_s){
+				nearest_s = check_car_s;
+				speed = check_speed;
+				modified = true;
+			}
+		}
+	}
+	return modified?nearest_s/abs(speed-car_speed):speed;
+}
+
 double ComputeSpeedOfLen(int lane, json sensor_fusion, int previos_size, double car_s){
 	double speed = 100000;
 	double nearest_s = 100000; 
@@ -295,22 +318,25 @@ int main() {
 							}
 							int right_lane = lane+1;
 							int left_lane = lane-1;
-							double left_lane_speed = 0;
-							double right_lane_speed = 0;
+							double left_lane_time = 0;
+							double right_lane_time = 0;
 							if(left_lane>=0 && left_lane<2){
 								if(!CheckIfCarIsTooClose(left_lane, sensor_fusion, previos_size, car_s, true, ceil(60-ref_vel))){
-									left_lane_speed = ComputeSpeedOfLen(left_lane, sensor_fusion, previos_size, car_s);
+									left_lane_time = ComputeTimeToReachNextVehicleInLen(left_lane, sensor_fusion, previos_size, car_s,ref_vel/2.24);
 								}
 							}
 							if(right_lane<=2 && right_lane>0){	
 								if(!CheckIfCarIsTooClose(right_lane, sensor_fusion, previos_size, car_s, true, ceil(60-ref_vel))){
-									right_lane_speed = ComputeSpeedOfLen(right_lane, sensor_fusion, previos_size, car_s);
+									right_lane_time = ComputeTimeToReachNextVehicleInLen(right_lane, sensor_fusion, previos_size, car_s,ref_vel/2.24);
 								}
 							}
-							if (right_lane_speed!=left_lane_speed){
-								lane =  right_lane_speed>left_lane_speed?right_lane:left_lane;
+							cout<<"-----------------------------------"<<endl;
+								cout<<"left_lane_time"<<" : "<<"right_lane_time"<<endl;
+								cout<<left_lane_time<<" : "<<right_lane_time<<endl;
+							if (left_lane_time!=right_lane_time){
+								lane =  right_lane_time>left_lane_time?right_lane:left_lane;
 								delay_consecutive_lane_change = 30;
-							} else if(left_lane_speed != 0 ){
+							} else if(left_lane_time != 0 ){
 								lane = left_lane;
 								delay_consecutive_lane_change = 30;
 							}
@@ -319,25 +345,28 @@ int main() {
 								ref_vel+=0.224;
 							}
 							if(delay_consecutive_lane_change == 0){
-								double current_lane_speed = ComputeSpeedOfLen(lane, sensor_fusion, previos_size, car_s);
+								double current_lane_time = ComputeTimeToReachNextVehicleInLen(lane, sensor_fusion, previos_size, car_s,ref_vel/2.24);
 								int right_lane = lane+1;
 								int left_lane = lane-1;
-								double left_lane_speed = 0;
-								double right_lane_speed = 0;
+								double left_lane_time = 0;
+								double right_lane_time = 0;
 								if(left_lane>=0 && left_lane<2){
 									if(!CheckIfCarIsTooClose(left_lane, sensor_fusion, previos_size, car_s, true, ceil(60-ref_vel))){
-										left_lane_speed = ComputeSpeedOfLen(left_lane, sensor_fusion, previos_size, car_s);
+										left_lane_time = ComputeTimeToReachNextVehicleInLen(left_lane, sensor_fusion, previos_size, car_s,ref_vel/2.24);
 									}
 								}
 								if(right_lane<=2 && right_lane>0){	
 									if(!CheckIfCarIsTooClose(right_lane, sensor_fusion, previos_size, car_s, true, ceil(60-ref_vel))){
-										right_lane_speed = ComputeSpeedOfLen(right_lane, sensor_fusion, previos_size, car_s);
+										right_lane_time = ComputeTimeToReachNextVehicleInLen(right_lane, sensor_fusion, previos_size, car_s,ref_vel/2.24);
 									}
 								}
-								if(current_lane_speed<left_lane_speed && left_lane_speed > right_lane_speed){
+								cout<<"-----------------------------------"<<endl;
+								cout<<"current_lane_time"<<" : "<<"left_lane_time"<<" : "<<"right_lane_time"<<endl;
+								cout<<current_lane_time<<" : "<<left_lane_time<<" : "<<right_lane_time<<endl;
+								if(current_lane_time<left_lane_time && left_lane_time > right_lane_time){
 									lane = left_lane;
 									delay_consecutive_lane_change = 30;
-								} else if(current_lane_speed<right_lane_speed && right_lane_speed > left_lane_speed){
+								} else if(current_lane_time<right_lane_time && right_lane_time > left_lane_time){
 									lane = right_lane;
 									delay_consecutive_lane_change = 30;
 								}
