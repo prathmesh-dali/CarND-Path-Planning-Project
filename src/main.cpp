@@ -166,7 +166,6 @@ vector<double> getXY(double s, double d, const vector<double> &maps_s, const vec
 
 bool CheckIfCarIsTooClose(int lane, json sensor_fusion, int previos_size, double car_s, bool check_behind, int behind_distance){
 	bool car_in_range = false;
-	cout<<"behind_distance :"<<behind_distance<<endl;
 	for(int i = 0; i< sensor_fusion.size(); i++){
 		float d = sensor_fusion[i][6];
 		if(d<(2+4*lane+2) && d> (2+4*lane-2)){
