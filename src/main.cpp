@@ -164,8 +164,9 @@ vector<double> getXY(double s, double d, const vector<double> &maps_s, const vec
 
 }
 
-bool CheckIfCarIsTooClose(int lane, json sensor_fusion, int previos_size, double car_s, bool check_behind){
+bool CheckIfCarIsTooClose(int lane, json sensor_fusion, int previos_size, double car_s, bool check_behind, int behind_distance){
 	bool car_in_range = false;
+	cout<<"behind_distance :"<<behind_distance<<endl;
 	for(int i = 0; i< sensor_fusion.size(); i++){
 		float d = sensor_fusion[i][6];
 		if(d<(2+4*lane+2) && d> (2+4*lane-2)){
@@ -175,7 +176,7 @@ bool CheckIfCarIsTooClose(int lane, json sensor_fusion, int previos_size, double
 			double check_car_s = sensor_fusion[i][5];
 
 			check_car_s+= ((double)previos_size*0.02*check_speed);
-			if((check_car_s>car_s && (check_car_s-car_s)<30) || (check_car_s<car_s && (car_s-check_car_s)<10 && check_behind)){
+			if((check_car_s>car_s && (check_car_s-car_s)<30) || (check_car_s<car_s && (car_s-check_car_s)<behind_distance && check_behind)){
 				car_in_range = true;
 			}
 		}
@@ -219,6 +220,7 @@ int main() {
   // The max s value before wrapping around the track back to 0
   double max_s = 6945.554;
 	int lane = 1;
+	int delay_consecutive_lane_change = 0;
 
 	double ref_vel = 0.0;
 
@@ -245,7 +247,7 @@ int main() {
   }
 
 
-  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy,&lane, &ref_vel ](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy,&lane, &ref_vel, &delay_consecutive_lane_change ](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -287,7 +289,7 @@ int main() {
 							car_s = end_path_s;
 						}
 
-						too_close = CheckIfCarIsTooClose(lane, sensor_fusion, previos_size, car_s, false);
+						too_close = CheckIfCarIsTooClose(lane, sensor_fusion, previos_size, car_s, false, 0);
 						if(too_close){
 							if(ref_vel/2.24>ComputeSpeedOfLen(lane, sensor_fusion, previos_size, car_s)){
 								ref_vel-=0.224;
@@ -297,23 +299,54 @@ int main() {
 							double left_lane_speed = 0;
 							double right_lane_speed = 0;
 							if(left_lane>=0 && left_lane<2){
-								if(!CheckIfCarIsTooClose(left_lane, sensor_fusion, previos_size, car_s, true)){
+								if(!CheckIfCarIsTooClose(left_lane, sensor_fusion, previos_size, car_s, true, ceil(60-ref_vel))){
 									left_lane_speed = ComputeSpeedOfLen(left_lane, sensor_fusion, previos_size, car_s);
 								}
 							}
 							if(right_lane<=2 && right_lane>0){	
-								if(!CheckIfCarIsTooClose(right_lane, sensor_fusion, previos_size, car_s, true)){
+								if(!CheckIfCarIsTooClose(right_lane, sensor_fusion, previos_size, car_s, true, ceil(60-ref_vel))){
 									right_lane_speed = ComputeSpeedOfLen(right_lane, sensor_fusion, previos_size, car_s);
 								}
 							}
 							if (right_lane_speed!=left_lane_speed){
 								lane =  right_lane_speed>left_lane_speed?right_lane:left_lane;
+								delay_consecutive_lane_change = 30;
 							} else if(left_lane_speed != 0 ){
 								lane = left_lane;
+								delay_consecutive_lane_change = 30;
 							}
-						} else if(ref_vel<49.5){
-							ref_vel+=0.224;
-						}
+						} else{
+							if(ref_vel<49.5){
+								ref_vel+=0.224;
+							}
+							if(delay_consecutive_lane_change == 0){
+								double current_lane_speed = ComputeSpeedOfLen(lane, sensor_fusion, previos_size, car_s);
+								int right_lane = lane+1;
+								int left_lane = lane-1;
+								double left_lane_speed = 0;
+								double right_lane_speed = 0;
+								if(left_lane>=0 && left_lane<2){
+									if(!CheckIfCarIsTooClose(left_lane, sensor_fusion, previos_size, car_s, true, ceil(60-ref_vel))){
+										left_lane_speed = ComputeSpeedOfLen(left_lane, sensor_fusion, previos_size, car_s);
+									}
+								}
+								if(right_lane<=2 && right_lane>0){	
+									if(!CheckIfCarIsTooClose(right_lane, sensor_fusion, previos_size, car_s, true, ceil(60-ref_vel))){
+										right_lane_speed = ComputeSpeedOfLen(right_lane, sensor_fusion, previos_size, car_s);
+									}
+								}
+								if(current_lane_speed<left_lane_speed && left_lane_speed > right_lane_speed){
+									lane = left_lane;
+									delay_consecutive_lane_change = 30;
+								} else if(current_lane_speed<right_lane_speed && right_lane_speed > left_lane_speed){
+									lane = right_lane;
+									delay_consecutive_lane_change = 30;
+								}
+								
+							}else {
+									delay_consecutive_lane_change -= 1;
+								}
+						} 
 
 
 						vector<double> ptsx;
